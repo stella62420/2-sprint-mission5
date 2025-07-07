@@ -8,3 +8,6 @@ node_modules/
 public/*
 !public/.gitkeep
 
+# Generated & upload dirs
+generated/prisma/
+uploads/
