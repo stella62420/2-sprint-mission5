@@ -1,3 +1,10 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,47 +14,88 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+model User {
+  id              Int              @id @default(autoincrement())
+  email           String           @unique
+  nickname        String           @unique
+  image           String?
+  password        String
+  refreshToken    String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  Articles        Article[]        @relation("UserArticles")
+  Products        Product[]
+  Comments        Comment[]        @relation("UserComments")
+  ProductComments ProductComment[]
+  LikedProducts   ProductLike[]
+  LikedArticles   ArticleLike[]    @relation("UserLikes")
+}
+
 model Article {
-  id        Int       @id @default(autoincrement())
-  title     String   
-  content   String   
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  comments  Comment[]
+  id       Int           @id @default(autoincrement())
+  title    String
+  content  String
+  userId   Int
+  user     User          @relation("UserArticles", fields: [userId], references: [id])
+  comments Comment[]
+  Likes    ArticleLike[]
 }
 
 model Product {
-  id               Int       @id @default(autoincrement())
-  name             String    @db.VarChar(255)
-  description      String?
-  price            Decimal   @db.Decimal(10, 2)
-  tags             String[] 
-  images           String[] 
-  favoriteCount    Int       @default(0)
-  manufacturer     String?   @db.VarChar(100)
-  recommendedScore Int       @default(0) 
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt 
-  comments         Comment[]
+  id              Int              @id @default(autoincrement())
+  title           String
+  description     String
+  price           Int
+  category        String?
+  images          String[]
+  userId          Int 
+  seller          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ProductComments ProductComment[]
+  Likes           ProductLike[] 
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model Comment {
-  id          Int      @id @default(autoincrement())
-  content     String   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt @default(now())
-  productId   Int?
-  product     Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
-  articleId   Int?
-  article     Article? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  id        Int     @id @default(autoincrement())
+  content   String
+  articleId Int
+  userId    Int
+  user      User    @relation("UserComments", fields: [userId], references: [id])
+  article   Article @relation(fields: [articleId], references: [id])
 }
 
-model Document {
+model ProductLike {
   id        Int      @id @default(autoincrement())
-  filename  String 
-  mimetype  String 
-  size      Int
-  url       String   @unique 
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([productId, userId])
+}
+
+model ProductComment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  productId Int
+  userId    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+model ArticleLike {
+  articleId Int
+  userId    Int
+
+  Article Article @relation(fields: [articleId], references: [id])
+  User    User    @relation("UserLikes", fields: [userId], references: [id])
+
+  @@id([articleId, userId])
+}
+
