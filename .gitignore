@@ -8,3 +8,9 @@ node_modules/
 public/*
 !public/.gitkeep
 
+<<<<<<< HEAD
+=======
+# Generated & upload dirs
+generated/prisma/
+uploads/
+>>>>>>> upstream/김슬비
