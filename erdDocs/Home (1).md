@@ -23,6 +23,9 @@
 ### 🖼 이미지 업로드
 - [Images API](Images-API)
 
+### 🔔 알림 기능
+- [Notifications API](Notifications-API)
+
 ### 🧱 공통 기능
 - [Middleware 설명](Middleware)
 
@@ -33,6 +36,5 @@
 ---
 
 ## 📌 사용 팁
-
-- 문서는 GitHub Wiki 탭에서 직접 추가하거나 `.wiki` 저장소를 통해 관리할 수 있습니다.
-- ERD 다이어그램은 [Mermaid Live Editor](https://mermaid.live)에서 시각화할 수 있습니다.
+- 문서는 GitHub Wiki 탭 또는 `.wiki` 저장소에서 관리
+- ERD 다이어그램은 [Mermaid Live Editor](https://mermaid.live)에서 시각화 가능

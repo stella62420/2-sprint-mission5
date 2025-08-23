@@ -1,24 +1,12 @@
 import type { User } from '@prisma/client';
+import 'express-serve-static-core';
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: Pick<User, 'id' | 'email' | 'nickname'> | null;
-    }
-  }
-}
-
-declare namespace Express {
-  export interface Request {
-    user?: {
-      id: number;
-      email: string;
-      nickname: string;
-      password?: string;
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: (Pick<User, 'id' | 'email' | 'nickname'> & {
       image?: string | null;
-    } | null;
+    }) | null;
   }
 }
-
 
 export {};

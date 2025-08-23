@@ -1,135 +1,122 @@
 # 📰 Articles API
 
-게시글 CRUD 및 좋아요 기능을 제공합니다.
-
----
-
 ## GET /articles
-
 게시글 목록 조회
 
-- Query Params:
-  - `page`: 페이지 번호 (default: 1)
-  - `pageSize`: 페이지 크기 (default: 10)
-  - `keyword`: 검색어
+### Request
+Query: `page`, `pageSize`, `keyword`
 
-- 응답 예시:
+### Response
 ```json
 {
-  "list": [
-    {
-      "id": 1,
-      "title": "제목",
-      "content": "내용",
-      "isLiked": false
-    }
+  "items": [
+    { "id": 1, "title": "첫 글", "content": "내용...", "likes": 3, "createdAt": "..." }
   ],
-  "totalCount": 1
+  "page": 1,
+  "pageSize": 10,
+  "total": 1
 }
 ```
 
----
-
-## GET /articles/:id
-
-게시글 상세 조회
-
-- 응답 예시:
-```json
-{
-  "id": 1,
-  "title": "제목",
-  "content": "내용",
-  "isLiked": true
-}
-```
-
-- 오류:
-```json
-{
-  "message": "article with id 999 not found"
-}
-```
+### Known Errors
+- `InternalServerError`
 
 ---
 
 ## POST /articles
-
 게시글 작성 (인증 필요)
 
-- Body:
+### Request
 ```json
-{
-  "title": "제목",
-  "content": "내용",
-  "image": null
-}
+{ "title": "제목", "content": "내용" }
 ```
 
-- 응답:
+### Response
 ```json
-{
-  "id": 2,
-  "title": "제목",
-  "content": "내용"
-}
+{ "id": 1, "title": "제목", "content": "내용", "authorId": 1, "createdAt": "..." }
 ```
 
-- 오류:
+### Known Errors
+- `UnauthorizedError(401)`: 인증 실패
+- `ValidationError`
+- `InternalServerError`
+
+---
+
+## GET /articles/:id
+게시글 상세 조회
+
+### Response
 ```json
-{
-  "message": "Invalid request body"
-}
+{ "id": 1, "title": "제목", "content": "내용", "authorId": 1, "createdAt": "..." }
 ```
+
+### Known Errors
+- `NotFoundError(404)`: Article not found
+- `InternalServerError`
 
 ---
 
 ## PATCH /articles/:id
+게시글 수정 (작성자만)
 
-게시글 수정
-
-- 오류 예시:
+### Request
 ```json
-{
-  "message": "You do not have permission to update this article."
-}
+{ "title": "수정된 제목", "content": "수정된 내용" }
 ```
+
+### Response
+```json
+{ "id": 1, "title": "수정된 제목", "content": "수정된 내용", "authorId": 1 }
+```
+
+### Known Errors
+- `UnauthorizedError(401)`
+- `ForbiddenError(403)`: 권한 없음
+- `NotFoundError(404)`: Article not found
+- `ValidationError`
+- `InternalServerError`
 
 ---
 
 ## DELETE /articles/:id
+게시글 삭제 (작성자만)
 
-게시글 삭제
+### Response
+`204 No Content`
 
-- 오류 예시:
-```json
-{
-  "message": "article with id 123 not found"
-}
-```
-
----
-
-## POST /articles/:id/likes
-
-게시글 좋아요 추가
-
-- 오류 예시:
-```json
-{
-  "message": "Already liked this article."
-}
-```
+### Known Errors
+- `UnauthorizedError(401)`
+- `ForbiddenError(403)`
+- `NotFoundError(404)`
+- `InternalServerError`
 
 ---
 
-## DELETE /articles/:id/likes
+## POST /articles/:id/like
+게시글 좋아요 (인증 필요)
 
-좋아요 취소
-
-- 오류 예시:
+### Response
 ```json
-{
-  "message": "Not liked this article yet."
-}
+{ "liked": true, "likes": 4 }
 ```
+
+### Known Errors
+- `UnauthorizedError(401)`
+- `NotFoundError(404)`
+- `InternalServerError`
+
+---
+
+## DELETE /articles/:id/like
+좋아요 취소 (인증 필요)
+
+### Response
+```json
+{ "liked": false, "likes": 3 }
+```
+
+### Known Errors
+- `UnauthorizedError(401)`
+- `NotFoundError(404)`
+- `InternalServerError`

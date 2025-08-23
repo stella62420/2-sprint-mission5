@@ -1,21 +1,30 @@
-import { coerce, integer, object, string, defaulted, optional, enums, nonempty } from 'superstruct';
+import {
+  object, number, string, optional, coerce, union, literal,
+} from 'superstruct';
 
-const integerString = coerce(integer(), string(), (value) => parseInt(value));
+const toNum = (v: any, def: number) =>
+  v == null || v === '' ? def : Number(v);
 
 export const IdParamsStruct = object({
-  id: integerString,
+  id: coerce(number(), string(), (v) => Number(v)),
 });
 
 export const PageParamsStruct = object({
-  page: defaulted(integerString, 1),
-  pageSize: defaulted(integerString, 10),
-  orderBy: optional(enums(['recent'])),
-  keyword: optional(nonempty(string())),
+  page: coerce(number(), string(), (v) => toNum(v, 1)),
+  pageSize: coerce(number(), string(), (v) => toNum(v, 10)),
+  keyword: optional(coerce(string(), string(), (v) => (v ?? '').trim())),
+  orderBy: optional(
+    union([
+      literal('latest'),
+      literal('oldest'),
+      literal('priceAsc'),
+      literal('priceDesc'),
+    ])
+  ),
 });
 
 export const CursorParamsStruct = object({
-  cursor: defaulted(integerString, 0),
-  limit: defaulted(integerString, 10),
-  orderBy: optional(enums(['recent'])),
-  keyword: optional(nonempty(string())),
+  cursor: optional(coerce(number(), string(), (v) => Number(v))),
+  take: coerce(number(), string(), (v) => toNum(v, 20)),
+  limit: optional(coerce(number(), string(), (v) => Number(v))),
 });
