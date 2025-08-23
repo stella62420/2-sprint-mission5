@@ -1,11 +1,8 @@
-class NotFoundError extends Error {
-  constructor(modelName: string, id: string | number) {
-    super(`${modelName} with id ${id} not found`);
-    this.name = 'NotFoundError';
+import HttpError from './HttpError';
 
-  
-    Object.setPrototypeOf(this, NotFoundError.prototype);
+export default class NotFoundError extends HttpError {
+  constructor(message = 'Not Found', payload?: unknown) {
+    super(404, message, payload);
+    this.name = 'NotFoundError';
   }
 }
-
-export default NotFoundError;
