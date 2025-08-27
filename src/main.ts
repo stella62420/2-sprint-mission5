@@ -4,10 +4,10 @@ import cors from 'cors';
 import path from 'path';
 
 import { PORT, PUBLIC_PATH, STATIC_PATH } from './lib/constants';
-import articlesRouter from './articles/articlesRouter'; 
-import productsRouter from './products/productsRouter';
-import commentsRouter from './comments/commentsRouter'; 
-import imagesRouter from './images/imagesRouter';  
+import articlesRouter from './articles/articleRouter'; 
+import productsRouter from './products/productRouter';
+import commentsRouter from './comments/commentRouter'; 
+import imagesRouter from './images/imageRouter';  
 import authRouter from './auth/authRouter';          
 import userRouter from './users/userRouter'; 
 import { errorHandler, defaultNotFoundHandler } from './lib/errorController';

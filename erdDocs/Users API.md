@@ -1,47 +1,35 @@
 # 👤 Users API
 
-(예시용) 사용자 관련 API 문서입니다.  
-실제로 구현된 기능에 따라 내용은 추가/수정 가능합니다.
+## GET /users/me
+내 정보 조회
+
+### Request
+Header: `Authorization: Bearer {accessToken}`
+
+### Response
+```json
+{ "id": 1, "email": "test@example.com", "nickname": "tester", "image": null }
+```
+
+### Known Errors
+- `UnauthorizedError(401)`: 인증 실패
+- `InternalServerError`
 
 ---
 
-## GET /users/me
-
-내 정보 조회 (인증 필요)
-
-- 응답 예시:
-```json
-{
-  "id": 1,
-  "email": "user@example.com",
-  "nickname": "usernick"
-}
-```
-
 ## PATCH /users/password
+비밀번호 변경
 
-비밀번호 변경 (인증 필요)
-
-- Body:
+### Request
 ```json
-{
-  "oldPassword": "oldpass123",
-  "newPassword": "newpass456"
-}
+{ "oldPassword": "1234", "newPassword": "abcd" }
 ```
 
-- 응답:
-```json
-{
-  "message": "Password changed successfully"
-}
-```
+### Response
+`204 No Content`
 
-- 오류 예시:
-```json
-{
-  "message": "Old password does not match"
-}
-```
-
-> ⚠️ 실제 구현된 API가 다르면 반영해 주세요.
+### Known Errors
+- `UnauthorizedError(401)`: 인증 실패
+- `ForbiddenError(403)`: 현재 비밀번호 불일치 등 정책 위반
+- `ValidationError`
+- `InternalServerError`

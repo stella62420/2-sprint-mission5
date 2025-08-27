@@ -1,77 +1,44 @@
-import { RequestHandler } from 'express';
-import { verifyAccessToken } from '../lib/jwt';
+import type { RequestHandler } from 'express';
 import { prismaClient } from '../lib/prismaClient';
-import { User } from '@prisma/client';
-
+import { verifyAccessToken } from '../lib/jwt';
 
 export const authenticateUser: RequestHandler = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ message: 'Authentication token missing or malformed.' });
-      return;
+    const header = req.headers.authorization;
+    if (!header?.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Authentication token missing or malformed.' });
     }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyAccessToken(token) as { userId: number };
-
-    if (!decoded?.userId) {
-      res.status(401).json({ message: 'Invalid token.' });
-      return;
-    }
+    const token = header.split(' ')[1];
+    const { id } = verifyAccessToken(token);
 
     const user = await prismaClient.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, email: true, nickname: true, image: true },
+      where: { id },
+      select: { id: true, email: true, nickname: true, image: true, createdAt: true },
     });
+    if (!user) return res.status(401).json({ message: 'Invalid token' });
 
-    if (!user) {
-      res.status(401).json({ message: 'User not found for this token.' });
-      return;
-    }
-
-    req.user = user;
+    (req as any).user = user;
     next();
-  } catch (err: any) {
-    if (err.name === 'TokenExpiredError') {
-      res.status(401).json({ message: 'Token expired.' });
-      return;
-    }
-
-    console.error('JWT verification error:', err);
-    res.status(401).json({ message: 'Invalid token.' });
+  } catch (e) {
+    return res.status(401).json({ message: 'Invalid token' });
   }
 };
 
-export const optionalAuthenticateUser: RequestHandler = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    req.user = null;
-    return next();
-  }
-
-  const token = authHeader.split(' ')[1];
-
+export const optionalAuthenticateUser: RequestHandler = async (req, _res, next) => {
   try {
-    const decoded = verifyAccessToken(token) as { userId: number };
-
-    if (!decoded?.userId) {
-      req.user = null;
-      return next();
+    const header = req.headers.authorization;
+    if (!header?.startsWith('Bearer ')) {
+      (req as any).user = null; return next();
     }
-
+    const token = header.split(' ')[1];
+    const { id } = verifyAccessToken(token);
     const user = await prismaClient.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, email: true, nickname: true },
+      where: { id },
+      select: { id: true, email: true, nickname: true, image: true, createdAt: true },
     });
-
-    req.user = user || null;
+    (req as any).user = user || null;
     next();
-  } catch (err) {
-    console.warn('Optional authentication failed:', (err as Error).message);
-    req.user = null;
-    next();
+  } catch {
+    (req as any).user = null; next();
   }
 };

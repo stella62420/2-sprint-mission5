@@ -1,24 +1,17 @@
 # 🖼 Images API
 
-이미지 업로드 API를 제공합니다.
-
----
-
 ## POST /images/upload
+이미지 업로드 (인증 필요일 수 있음)
 
-- Form-Data:
-  - `image`: (파일 업로드)
+### Request
+FormData: `image` 필드 (multipart/form-data)
 
-- 응답 예시:
+### Response
 ```json
-{
-  "url": "http://localhost:3000/public/image.jpg"
-}
+{ "url": "/uploads/filename.png" }
 ```
 
-- 오류 예시:
-```json
-{
-  "message": "Only png, jpeg, and jpg are allowed"
-}
-```
+### Known Errors
+- `UnauthorizedError(401)`: 인증 필요 시
+- `ValidationError`: 파일 누락/형식 오류
+- `InternalServerError`

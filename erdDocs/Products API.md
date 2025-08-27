@@ -1,161 +1,133 @@
-# 🛒 Product API
-
-상품 등록, 조회, 수정, 삭제 등 커머스형 기능을 제공합니다.
-
----
+# 🛒 Products API
 
 ## GET /products
+상품 목록 조회
 
-상품 목록 조회 (검색/페이지네이션)
+### Request
+Query: `page`, `pageSize`, `keyword`, `orderBy` (newest|oldest|priceAsc|priceDesc)
 
-- Query Params:
-  - `page`: 페이지 번호 (default: 1)
-  - `pageSize`: 페이지 크기 (default: 10)
-  - `keyword`: 제목/설명 검색어
-
-- 응답 예시:
+### Response
 ```json
 {
-  "list": [
-    {
-      "id": 1,
-      "title": "MacBook",
-      "description": "M3 MacBook Pro",
-      "price": 2500000,
-      "isLiked": false
-    }
+  "items": [
+    { "id": 1, "title": "MacBook", "price": 2000, "images": [], "createdAt": "..." }
   ],
-  "totalCount": 1
+  "page": 1,
+  "pageSize": 10,
+  "total": 1
 }
 ```
 
----
-
-## GET /products/:id
-
-상품 상세 조회
-
-- 응답 예시:
-```json
-{
-  "id": 1,
-  "title": "MacBook",
-  "description": "M3 MacBook Pro",
-  "price": 2500000,
-  "category": "Electronics",
-  "images": [],
-  "isLiked": true
-}
-```
-
-- 오류:
-```json
-{
-  "message": "product with id 999 not found"
-}
-```
+### Known Errors
+- `InternalServerError`
 
 ---
 
 ## POST /products
-
 상품 등록 (인증 필요)
 
-- Body:
+### Request
 ```json
-{
-  "title": "MacBook",
-  "description": "M3 MacBook Pro",
-  "price": 2500000,
-  "category": "Electronics",
-  "images": ["http://.../image.jpg"]
-}
+{ "title": "MacBook", "description": "상세", "price": 2000, "images": [] }
 ```
 
-- 성공 응답:
+### Response
+```json
+{ "id": 1, "title": "MacBook", "description": "상세", "price": 2000, "images": [], "createdAt": "..." }
+```
+
+### Known Errors
+- `UnauthorizedError(401)`
+- `ValidationError`
+- `InternalServerError`
+
+---
+
+## GET /products/:id
+상품 상세 조회
+
+### Response
 ```json
 {
   "id": 1,
   "title": "MacBook",
-  ...
+  "description": "상세",
+  "price": 2000,
+  "images": [],
+  "likes": 3,
+  "liked": true,
+  "createdAt": "...",
+  "seller": { "id": 9, "nickname": "alice" }
 }
 ```
+
+### Known Errors
+- `NotFoundError(404)`
+- `InternalServerError`
 
 ---
 
 ## PATCH /products/:id
+상품 수정 (작성자만)  
+가격 변경 시 좋아요한 유저들에게 알림 전송 🔔
 
-상품 수정
-
-- 오류 예시:
+### Request
 ```json
-{
-  "message": "You do not have permission to update this product."
-}
+{ "title": "수정된 이름", "price": 1800 }
 ```
+
+### Response
+```json
+{ "id": 1, "title": "수정된 이름", "price": 1800, "updatedAt": "..." }
+```
+
+### Known Errors
+- `UnauthorizedError(401)`
+- `ForbiddenError(403)`
+- `NotFoundError(404)`
+- `ValidationError`
+- `InternalServerError`
 
 ---
 
 ## DELETE /products/:id
+상품 삭제 (작성자만)
 
-상품 삭제
+### Response
+`204 No Content`
 
-- 오류 예시:
-```json
-{
-  "message": "product with id 99 not found"
-}
-```
-
----
-
-## POST /products/:id/likes
-
-상품 좋아요 등록
-
-- 오류 예시:
-```json
-{
-  "message": "Already liked this product."
-}
-```
+### Known Errors
+- `UnauthorizedError(401)`
+- `ForbiddenError(403)`
+- `NotFoundError(404)`
+- `InternalServerError`
 
 ---
 
-## DELETE /products/:id/likes
+## POST /products/:id/like
+상품 좋아요 (인증 필요)
 
-상품 좋아요 취소
-
-- 오류 예시:
+### Response
 ```json
-{
-  "message": "Not liked this product yet."
-}
+{ "liked": true, "likes": 4 }
 ```
+
+### Known Errors
+- `UnauthorizedError(401)`
+- `NotFoundError(404)`
+- `InternalServerError`
 
 ---
 
-## POST /products/:id/comments
+## DELETE /products/:id/like
+상품 좋아요 취소 (인증 필요)
 
-상품 댓글 등록
-
-- Body:
+### Response
 ```json
-{
-  "content": "이거 실물 예쁘나요?"
-}
+{ "liked": false, "likes": 3 }
 ```
 
----
-
-## GET /products/:id/comments
-
-댓글 목록 조회
-
-- 응답 예시:
-```json
-{
-  "list": [{ "id": 1, "content": "이거 좋아요!" }],
-  "nextCursor": null
-}
-```
+### Known Errors
+- `UnauthorizedError(401)`
+- `NotFoundError(404)`
+- `InternalServerError`

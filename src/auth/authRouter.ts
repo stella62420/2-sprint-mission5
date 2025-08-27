@@ -1,13 +1,13 @@
 import express from 'express';
 import { withAsync } from '../lib/withAsync';
-import { register, login, refreshAccessToken } from '../auth/authController';
-import { validate } from '../middleware/validation';
-import { RegisterBodyStruct, LoginBodyStruct } from '../auth/authStructs';
+import { authenticateUser } from '../middleware/auth';
+import { register, login, refresh, logout } from './authController';
 
 const authRouter = express.Router();
 
-authRouter.post('/register', validate('body', RegisterBodyStruct), withAsync(register));
-authRouter.post('/login', validate('body', LoginBodyStruct), withAsync(login));
-authRouter.post('/refresh', withAsync(refreshAccessToken));
+authRouter.post('/register', withAsync(register));
+authRouter.post('/login', withAsync(login));
+authRouter.post('/refresh', withAsync(refresh));
+authRouter.post('/logout', authenticateUser, withAsync(logout));
 
 export default authRouter;

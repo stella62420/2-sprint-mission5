@@ -1,8 +1,6 @@
-class BadRequestError extends Error {
-  constructor(message:string) {
-    super(message);
-    this.name = 'BadRequestError';
+import HttpError from './HttpError';
+export default class BadRequestError extends HttpError {
+  constructor(message = 'Bad Request', payload?: unknown) {
+    super(400, message, payload);
   }
 }
-
-export default BadRequestError;
