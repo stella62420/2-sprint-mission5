@@ -1,69 +1,92 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.register = register;
+exports.signup = signup;
 exports.login = login;
-exports.refreshAccessToken = refreshAccessToken;
-const bcryptjs_1 = __importDefault(require("bcryptjs"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const prismaClient_1 = require("../lib/prismaClient");
-const BadRequestError_1 = __importDefault(require("../lib/errors/BadRequestError"));
-const authStructs_1 = require("./authStructs");
 const superstruct_1 = require("superstruct");
-const env_1 = require("../lib/env");
-async function register(req, res) {
-    const { email, nickname, password } = (0, superstruct_1.create)(req.body, authStructs_1.RegisterBodyStruct);
-    const hashedPassword = await bcryptjs_1.default.hash(password, 10);
-    const newUser = await prismaClient_1.prismaClient.user.create({
-        data: {
-            email,
-            nickname,
-            password: hashedPassword,
-        },
-    });
-    res.status(201).json({
-        id: newUser.id,
-        email: newUser.email,
-        nickname: newUser.nickname,
-    });
+const auth_structs_1 = require("./auth.structs");
+const service = __importStar(require("./authService"));
+function pickId(obj) {
+    return obj?.id ?? obj?.data?.id ?? obj?.user?.id;
 }
-async function login(req, res) {
-    const { email, password } = (0, superstruct_1.create)(req.body, authStructs_1.LoginBodyStruct);
-    const user = await prismaClient_1.prismaClient.user.findUnique({ where: { email } });
-    if (!user)
-        throw new BadRequestError_1.default('Invalid credentials');
-    const isMatch = await bcryptjs_1.default.compare(password, user.password);
-    if (!isMatch)
-        throw new BadRequestError_1.default('Invalid credentials');
-    const accessToken = jsonwebtoken_1.default.sign({ userId: user.id }, env_1.JWT_SECRET, {
-        expiresIn: env_1.JWT_EXPIRES_IN,
-    });
-    const refreshToken = jsonwebtoken_1.default.sign({ userId: user.id }, env_1.REFRESH_TOKEN_SECRET, {
-        expiresIn: env_1.REFRESH_TOKEN_EXPIRES_IN,
-    });
-    await prismaClient_1.prismaClient.user.update({
-        where: { id: user.id },
-        data: { refreshToken },
-    });
-    res.status(200).json({ accessToken, refreshToken });
+function pickToken(obj) {
+    return obj?.token ?? obj?.accessToken ?? obj?.data?.token;
 }
-// 리프레시 키로 새 access token 발급
-async function refreshAccessToken(req, res) {
-    const { refreshToken } = (0, superstruct_1.create)(req.body, authStructs_1.RefreshTokenBodyStruct);
-    if (!refreshToken) {
-        throw new BadRequestError_1.default('Refresh Token is required.');
+async function signup(req, res, next) {
+    try {
+        const body = (0, superstruct_1.create)(req.body ?? {}, auth_structs_1.RegisterBodyStruct);
+        const fn = service.signup ??
+            service.register ??
+            service.signUp;
+        if (typeof fn !== 'function')
+            throw new Error('authService.signup not implemented');
+        const created = await fn(body);
+        res.status(201).json({ id: pickId(created) });
     }
-    const decoded = jsonwebtoken_1.default.verify(refreshToken, env_1.REFRESH_TOKEN_SECRET);
-    const user = await prismaClient_1.prismaClient.user.findUnique({
-        where: { id: decoded.userId },
-    });
-    if (!user || user.refreshToken !== refreshToken) {
-        throw new BadRequestError_1.default('Invalid or expired Refresh Token.');
+    catch (e) {
+        if (e?.name === 'StructError') {
+            return res.status(400).json({ message: e.message ?? 'Bad Request' });
+        }
+        const status = typeof e?.status === 'number' ? e.status : 0;
+        if (status === 400)
+            return res.status(400).json({ message: e.message ?? 'Bad Request' });
+        next(e);
     }
-    const newAccessToken = jsonwebtoken_1.default.sign({ userId: user.id }, env_1.JWT_SECRET, {
-        expiresIn: env_1.JWT_EXPIRES_IN,
-    });
-    res.status(200).json({ accessToken: newAccessToken });
 }
+async function login(req, res, next) {
+    try {
+        const body = (0, superstruct_1.create)(req.body ?? {}, auth_structs_1.LoginBodyStruct);
+        const fn = service.login ??
+            service.signin ??
+            service.signIn ??
+            service.logIn;
+        if (typeof fn !== 'function')
+            throw new Error('authService.login not implemented');
+        const result = await fn(body);
+        res.status(200).json({ token: pickToken(result) });
+    }
+    catch (e) {
+        if (e?.name === 'StructError') {
+            return res.status(400).json({ message: e.message ?? 'Bad Request' });
+        }
+        const status = typeof e?.status === 'number' ? e.status : 0;
+        if (status === 401)
+            return res.status(401).json({ message: 'Unauthorized' });
+        if (status === 400)
+            return res.status(400).json({ message: e.message ?? 'Bad Request' });
+        next(e);
+    }
+}
+exports.default = { signup, login };

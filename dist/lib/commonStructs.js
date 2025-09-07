@@ -2,19 +2,23 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CursorParamsStruct = exports.PageParamsStruct = exports.IdParamsStruct = void 0;
 const superstruct_1 = require("superstruct");
-const integerString = (0, superstruct_1.coerce)((0, superstruct_1.integer)(), (0, superstruct_1.string)(), (value) => parseInt(value));
+const toNum = (v, def) => v == null || v === '' ? def : Number(v);
 exports.IdParamsStruct = (0, superstruct_1.object)({
-    id: integerString,
+    id: (0, superstruct_1.coerce)((0, superstruct_1.number)(), (0, superstruct_1.string)(), (v) => Number(v)),
 });
 exports.PageParamsStruct = (0, superstruct_1.object)({
-    page: (0, superstruct_1.defaulted)(integerString, 1),
-    pageSize: (0, superstruct_1.defaulted)(integerString, 10),
-    orderBy: (0, superstruct_1.optional)((0, superstruct_1.enums)(['recent'])),
-    keyword: (0, superstruct_1.optional)((0, superstruct_1.nonempty)((0, superstruct_1.string)())),
+    page: (0, superstruct_1.coerce)((0, superstruct_1.number)(), (0, superstruct_1.string)(), (v) => toNum(v, 1)),
+    pageSize: (0, superstruct_1.coerce)((0, superstruct_1.number)(), (0, superstruct_1.string)(), (v) => toNum(v, 10)),
+    keyword: (0, superstruct_1.optional)((0, superstruct_1.coerce)((0, superstruct_1.string)(), (0, superstruct_1.string)(), (v) => (v ?? '').trim())),
+    orderBy: (0, superstruct_1.optional)((0, superstruct_1.union)([
+        (0, superstruct_1.literal)('latest'),
+        (0, superstruct_1.literal)('oldest'),
+        (0, superstruct_1.literal)('priceAsc'),
+        (0, superstruct_1.literal)('priceDesc'),
+    ])),
 });
 exports.CursorParamsStruct = (0, superstruct_1.object)({
-    cursor: (0, superstruct_1.defaulted)(integerString, 0),
-    limit: (0, superstruct_1.defaulted)(integerString, 10),
-    orderBy: (0, superstruct_1.optional)((0, superstruct_1.enums)(['recent'])),
-    keyword: (0, superstruct_1.optional)((0, superstruct_1.nonempty)((0, superstruct_1.string)())),
+    cursor: (0, superstruct_1.optional)((0, superstruct_1.coerce)((0, superstruct_1.number)(), (0, superstruct_1.string)(), (v) => Number(v))),
+    take: (0, superstruct_1.coerce)((0, superstruct_1.number)(), (0, superstruct_1.string)(), (v) => toNum(v, 20)),
+    limit: (0, superstruct_1.optional)((0, superstruct_1.coerce)((0, superstruct_1.number)(), (0, superstruct_1.string)(), (v) => Number(v))),
 });
