@@ -159,16 +159,7 @@
 <a name='L94'></a><a href='#L94'>94</a>
 <a name='L95'></a><a href='#L95'>95</a>
 <a name='L96'></a><a href='#L96'>96</a>
-<a name='L97'></a><a href='#L97'>97</a>
-<a name='L98'></a><a href='#L98'>98</a>
-<a name='L99'></a><a href='#L99'>99</a>
-<a name='L100'></a><a href='#L100'>100</a>
-<a name='L101'></a><a href='#L101'>101</a>
-<a name='L102'></a><a href='#L102'>102</a>
-<a name='L103'></a><a href='#L103'>103</a>
-<a name='L104'></a><a href='#L104'>104</a>
-<a name='L105'></a><a href='#L105'>105</a>
-<a name='L106'></a><a href='#L106'>106</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L97'></a><a href='#L97'>97</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -184,7 +175,6 @@
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -199,7 +189,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -218,7 +207,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
@@ -231,7 +219,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -250,9 +237,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -261,13 +245,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -288,7 +270,6 @@ import NotFoundError from '../lib/errors/NotFoundError';
 export default class ProductService {
   constructor(private readonly repo: any) {}
 &nbsp;
-  /* 소유자 id를 안전하게 꺼내기 (리포지토리 구현별로 필드명이 다를 수 있음) */
   private getOwnerId(row: any): number | undefined {
     return (
       row?.authorId ??
@@ -306,7 +287,6 @@ export default class ProductService {
 <span class="cstat-no" title="statement not covered" >    throw new Error('Repository does not implement findMany');</span>
   }
 &nbsp;
-  /* getById는 두 번째 인자를 전달(테스트에서 undefined까지 확인함) */
   async getById(id: number, userId?: number): Promise&lt;ProductDetailDTO&gt; {
     const found = this.repo?.findById ? await this.repo.findById(id, userId) : <span class="branch-1 cbranch-no" title="branch not covered" >null;</span>
     if (!found) throw new NotFoundError(`product ${id} not found`);
@@ -318,7 +298,6 @@ export default class ProductService {
 <span class="cstat-no" title="statement not covered" >    throw new Error('Repository does not implement create');</span>
   }
 &nbsp;
-  /* 작성자만 수정 */
   async update(
     id: number,
     userId: number,
@@ -338,7 +317,6 @@ export default class ProductService {
     return this.repo.update({ id, userId, dto });
   }
 &nbsp;
-  /* 작성자만 삭제 */
   async remove(id: number, userId: number): Promise&lt;void&gt; {
     <span class="missing-if-branch" title="if path not taken" >I</span>if (!this.repo?.remove) <span class="cstat-no" title="statement not covered" >throw new Error('Repository does not implement remove');</span>
 &nbsp;
@@ -354,9 +332,6 @@ export default class ProductService {
     await this.repo.remove({ id, userId });
   }
 &nbsp;
-  /* ========== 좋아요/취소 ========== */
-&nbsp;
-  /** 좋아요 추가 -&gt; { id, likes } */
 <span class="fstat-no" title="function not covered" >  async </span>like(id: number, userId: number): Promise&lt;{ id: number; likes: number }&gt; {
 <span class="cstat-no" title="statement not covered" >    if (this.repo?.addLike)      <span class="cstat-no" title="statement not covered" >await this.repo.addLike({ id, userId });</span></span>
     else <span class="cstat-no" title="statement not covered" >if (this.repo?.like)    <span class="cstat-no" title="statement not covered" >await this.repo.like(id, userId);</span></span>
@@ -365,7 +340,6 @@ export default class ProductService {
 <span class="cstat-no" title="statement not covered" >    return { id, likes };</span>
   }
 &nbsp;
-  /** 좋아요 취소 -&gt; { id, likes } */
 <span class="fstat-no" title="function not covered" >  async </span>unlike(id: number, userId: number): Promise&lt;{ id: number; likes: number }&gt; {
 <span class="cstat-no" title="statement not covered" >    if (this.repo?.removeLike)   <span class="cstat-no" title="statement not covered" >await this.repo.removeLike({ id, userId });</span></span>
     else <span class="cstat-no" title="statement not covered" >if (this.repo?.unlike)  <span class="cstat-no" title="statement not covered" >await this.repo.unlike(id, userId);</span></span>
@@ -374,7 +348,6 @@ export default class ProductService {
 <span class="cstat-no" title="statement not covered" >    return { id, likes };</span>
   }
 &nbsp;
-  // 라우터/컨트롤러에서의 다양한 네이밍 호환
 <span class="fstat-no" title="function not covered" >  async </span>addLike(id: number, userId: number)    { <span class="cstat-no" title="statement not covered" >return this.like(id, userId); </span>}
 <span class="fstat-no" title="function not covered" >  async </span>removeLike(id: number, userId: number) { <span class="cstat-no" title="statement not covered" >return this.unlike(id, userId); </span>}
 }
@@ -385,7 +358,7 @@ export default class ProductService {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-07T15:27:13.407Z
+                at 2025-09-07T18:08:08.834Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

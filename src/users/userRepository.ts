@@ -1,4 +1,4 @@
-import { prismaClient } from '../lib/prismaClient';
+import prismaClient from '../lib/prismaClient';
 import type { CreateUserRequestDTO, UpdateUserRequestDTO } from './dtos/user.request.dto';
 
 export class UserRepository {

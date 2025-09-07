@@ -135,24 +135,11 @@
 <a name='L70'></a><a href='#L70'>70</a>
 <a name='L71'></a><a href='#L71'>71</a>
 <a name='L72'></a><a href='#L72'>72</a>
-<a name='L73'></a><a href='#L73'>73</a>
-<a name='L74'></a><a href='#L74'>74</a>
-<a name='L75'></a><a href='#L75'>75</a>
-<a name='L76'></a><a href='#L76'>76</a>
-<a name='L77'></a><a href='#L77'>77</a>
-<a name='L78'></a><a href='#L78'>78</a>
-<a name='L79'></a><a href='#L79'>79</a>
-<a name='L80'></a><a href='#L80'>80</a>
-<a name='L81'></a><a href='#L81'>81</a>
-<a name='L82'></a><a href='#L82'>82</a>
-<a name='L83'></a><a href='#L83'>83</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L73'></a><a href='#L73'>73</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -167,14 +154,12 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
@@ -184,7 +169,6 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
@@ -197,7 +181,6 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -205,8 +188,6 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
@@ -218,7 +199,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -227,15 +207,12 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// src/products/productsController.ts
-import type { Request, Response, NextFunction } from 'express';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { Request, Response, NextFunction } from 'express';
 import ProductService from './productService';
-import { PrismaProductRepository } from './productRepository'; // 기본 export(클래스)라고 가정
+import { PrismaProductRepository } from './productRepository';
 &nbsp;
-// ✅ 서비스 인스턴스 생성
 const service = new ProductService(new PrismaProductRepository());
 &nbsp;
-// 목록
 export async function getProductList(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = (req as any).user?.id as number | undefined;
@@ -249,7 +226,6 @@ export async function getProductList(req: Request, res: Response, next: NextFunc
   } catch (e) { <span class="cstat-no" title="statement not covered" >next(e); </span>}
 }
 &nbsp;
-// 상세  → getById는 인자 1개
 export async function getProductDetail(req: Request, res: Response, next: NextFunction) {
   try {
     const id = Number(req.params.id);
@@ -258,7 +234,6 @@ export async function getProductDetail(req: Request, res: Response, next: NextFu
   } catch (e) { <span class="cstat-no" title="statement not covered" >next(e); </span>}
 }
 &nbsp;
-// 생성(로그인)  → (dto, userId) 순서
 export async function createProduct(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = (req as any).user!.id as number;
@@ -268,7 +243,6 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
   } catch (e) { <span class="cstat-no" title="statement not covered" >next(e); </span>}
 }
 &nbsp;
-// 수정(작성자만)  → (id, userId, dto)
 export async function updateProduct(req: Request, res: Response, next: NextFunction) {
   try {
     const id = Number(req.params.id);
@@ -279,7 +253,6 @@ export async function updateProduct(req: Request, res: Response, next: NextFunct
   } catch (e) { next(e); }
 }
 &nbsp;
-// 삭제(작성자만)  → (id, userId)
 export async function removeProduct(req: Request, res: Response, next: NextFunction) {
   try {
     const id = Number(req.params.id);
@@ -289,8 +262,6 @@ export async function removeProduct(req: Request, res: Response, next: NextFunct
   } catch (e) { <span class="cstat-no" title="statement not covered" >next(e); </span>}
 }
 &nbsp;
-/* ===== 좋아요 ===== */
-// 추가 → { id, likes }
 export async function <span class="fstat-no" title="function not covered" >addProductLike(</span>req: Request, res: Response, next: NextFunction) {
 <span class="cstat-no" title="statement not covered" >  try {</span>
     const id = <span class="cstat-no" title="statement not covered" >Number(req.params.id);</span>
@@ -300,7 +271,6 @@ export async function <span class="fstat-no" title="function not covered" >addPr
   } catch (e) { <span class="cstat-no" title="statement not covered" >next(e); </span>}
 }
 &nbsp;
-// 취소 → { id, likes }
 export async function <span class="fstat-no" title="function not covered" >removeProductLike(</span>req: Request, res: Response, next: NextFunction) {
 <span class="cstat-no" title="statement not covered" >  try {</span>
     const id = <span class="cstat-no" title="statement not covered" >Number(req.params.id);</span>
@@ -316,7 +286,7 @@ export async function <span class="fstat-no" title="function not covered" >remov
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-07T15:27:13.407Z
+                at 2025-09-07T18:08:08.834Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

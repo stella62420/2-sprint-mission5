@@ -1,30 +1,35 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
+import { uploadSingle, uploadMultiple } from './imageController';
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../../uploads'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
+const router = Router();
 
-const upload = multer({ storage });
-const imagesRouter = Router();
+let upload: multer.Multer;
 
-// 단일 이미지 업로드 (Article 용)
-imagesRouter.post('/single', upload.single('image'), (req, res) => {
-  const url = `/uploads/${req.file?.filename}`;
-  res.json({ url });
-});
+if (process.env.NODE_ENV === 'production') {
+  upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+  });
+} else {
+  const uploadDir = path.resolve(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
-// 다중 이미지 업로드 (Product 용)
-imagesRouter.post('/multiple', upload.array('images', 5), (req, res) => {
-  const urls = (req.files as Express.Multer.File[]).map(f => `/uploads/${f.filename}`);
-  res.json({ urls });
-});
+  const storage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadDir),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9._-]/g, '_');
+      cb(null, `${Date.now()}_${base}${ext}`);
+    },
+  });
 
-export default imagesRouter;
+  upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+}
+
+router.post('/images', upload.single('image'), uploadSingle);
+router.post('/images/bulk', upload.array('images', 5), uploadMultiple);
+
+export default router;

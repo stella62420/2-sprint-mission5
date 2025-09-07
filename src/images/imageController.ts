@@ -1,43 +1,40 @@
-import { Request, Response } from 'express';
-import multer from 'multer';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
-import { PUBLIC_PATH, STATIC_PATH } from '../lib/constants';
-import BadRequestError from '../lib/errors/BadRequestError';
+import type { Request, Response, NextFunction } from 'express';
+import { makeS3Key, uploadToS3 } from './s3Uploader';
 
-const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/jpg'];
-const FILE_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
+export async function uploadSingle(req: Request, res: Response, next: NextFunction) {
+  try {
+    const file = req.file as Express.Multer.File | undefined;
+    if (!file) return res.status(400).json({ message: 'image is required' });
 
-export const upload = multer({
-  storage: multer.diskStorage({
-    destination(req, file, cb) {
-      cb(null, PUBLIC_PATH);
-    },
-    filename(req, file, cb) {
-      const ext = path.extname(file.originalname);
-      const filename = `${uuidv4()}${ext}`;
-      cb(null, filename);
-    },
-  }),
-  limits: {
-    fileSize: FILE_SIZE_LIMIT,
-  },
-  fileFilter(req, file, cb) {
-    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-      return cb(new BadRequestError('Only png, jpeg, and jpg are allowed'));
+    if (process.env.NODE_ENV === 'production') {
+      const key = makeS3Key(file.originalname);
+      const { url } = await uploadToS3(file.buffer, key, file.mimetype);
+      return res.json({ url });
     }
-    cb(null, true);
-  },
-});
 
-export async function uploadImage(req: Request, res: Response) {
-  if (!req.file) {
-    throw new BadRequestError('No image file was uploaded');
+    return res.json({ url: `/uploads/${file.filename}` });
+  } catch (e) {
+    next(e);
   }
+}
 
-  const protocol = req.protocol;
-  const host = req.get('host');
-  const url = `${protocol}://${host}/public/${req.file.filename}`;
+export async function uploadMultiple(req: Request, res: Response, next: NextFunction) {
+  try {
+    const files = (req.files as Express.Multer.File[]) || [];
+    if (!files.length) return res.status(400).json({ message: 'images are required' });
 
-  res.status(201).json({ url });
+    if (process.env.NODE_ENV === 'production') {
+      const urls: string[] = [];
+      for (const f of files) {
+        const key = makeS3Key(f.originalname);
+        const { url } = await uploadToS3(f.buffer, key, f.mimetype);
+        urls.push(url);
+      }
+      return res.json({ urls });
+    }
+
+    return res.json({ urls: files.map((f) => `/uploads/${f.filename}`) });
+  } catch (e) {
+    next(e);
+  }
 }

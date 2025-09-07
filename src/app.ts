@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 
 // ---- Routers ----
 import articlesRouter from './articles/articleRouter';
@@ -25,6 +26,7 @@ app.use('/articles', articlesRouter);
 app.use('/products', productsRouter);
 app.use('/comments', commentsRouter);
 app.use('/images', imagesRouter);
+app.use('/uploads', express.static(path.resolve('uploads')));
 
 app.get('/health', (_req, res) => res.status(200).json({ ok: true }));
 

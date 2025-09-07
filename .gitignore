@@ -2,15 +2,14 @@
 .vscode/
 node_modules/
 .env*
-!.env.example
+!env.example
+coverage/
+*.csv
 
 # Uploaded files
 public/*
 !public/.gitkeep
 
-<<<<<<< HEAD
-=======
 # Generated & upload dirs
 generated/prisma/
 uploads/
->>>>>>> upstream/김슬비
