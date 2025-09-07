@@ -5,6 +5,7 @@ node_modules/
 !env.example
 coverage/
 *.csv
+dist/
 
 # Uploaded files
 public/*
