@@ -1,24 +1,23 @@
-export type ProductOrderBy = 'latest' | 'oldest' | 'priceAsc' | 'priceDesc';
+export interface ListProductsQueryDTO {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+  orderBy?: 'latest' | 'popular' | 'priceAsc' | 'priceDesc';
+  category?: string;
+}
 
 export interface CreateProductRequestDTO {
   title: string;
-  description: string;
   price: number;
-  category?: string;
   images?: string[];
+  category?: string | null;
+  description?: string | null;
 }
 
 export interface UpdateProductRequestDTO {
   title?: string;
-  description?: string;
   price?: number;
-  category?: string;
   images?: string[];
-}
-
-export interface ListProductsQueryDTO {
-  page: number;
-  pageSize: number;
-  keyword?: string;
-  orderBy?: ProductOrderBy;
+  category?: string | null;
+  description?: string | null;
 }

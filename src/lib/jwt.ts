@@ -1,4 +1,4 @@
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET;
@@ -40,4 +40,12 @@ export function sanitizeUser<T extends { password?: string | null }>(user: T): O
   if (!user) return user as any;
   const { password, ...safe } = user as any;
   return safe;
+}
+
+export function verifyJwt<T = JwtPayload>(token: string): T {
+  return jwt.verify(token, JWT_SECRET) as unknown as T;
+}
+
+export function signJwt(payload: JwtPayload, expiresIn: string = '7d') {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }

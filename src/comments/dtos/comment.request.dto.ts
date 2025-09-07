@@ -13,7 +13,6 @@ export interface UpdateCommentRequestDTO {
 export interface ListCommentsQueryDTO {
   page: number;
   pageSize: number;
-  // optional filters
   targetType?: CommentTarget;
   targetId?: number;
   userId?: number;

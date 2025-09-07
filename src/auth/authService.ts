@@ -1,133 +1,72 @@
+import prisma from '../lib/prismaClient';
+import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { prismaClient } from '../lib/prismaClient';
-import {
-  signAccessToken,
-  signRefreshToken,
-  verifyRefreshToken,
-  sanitizeUser,
-} from '../lib/jwt';
-import HttpError from '../lib/errors/HttpError';
-import NotFoundError from '../lib/errors/NotFoundError';
 import UnauthorizedError from '../lib/errors/UnauthorizedError';
 
-import type {
-  RegisterRequestDTO,
-  LoginRequestDTO,
-  RefreshRequestDTO,
-} from './dtos/auth.request.dto';
+const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
+const JWT_EXPIRES_IN = '1h';
 
-import type {
-  RegisterResponseDTO,
-  LoginResponseDTO,
-  RefreshResponseDTO,
-  AuthUserDTO,
-} from './dtos/auth.response.dto';
+export interface SignupDTO {
+  email: string;
+  password: string;
+  nickname: string;
+  image?: string | null;
+}
 
-export default class AuthService {
-  private toAuthUserDTO(u: any): AuthUserDTO {
-    return sanitizeUser(u) as AuthUserDTO;
+export interface LoginDTO {
+  email: string;
+  password: string;
+}
+
+export interface LoginResult {
+  token: string;
+}
+
+function signToken(payload: { id: number; nickname?: string }) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+}
+
+export async function signup(dto: SignupDTO) {
+  const exists = await prisma.user.findFirst({
+    where: { OR: [{ email: dto.email }, { nickname: dto.nickname }] },
+    select: { id: true },
+  });
+  if (exists) throw new UnauthorizedError('Already exists');
+
+  const hashed = await bcrypt.hash(dto.password, 10);
+
+  const user = await prisma.user.create({
+    data: {
+      email: dto.email,
+      password: hashed,
+      nickname: dto.nickname,
+      image: dto.image ?? null,
+    },
+    select: { id: true, email: true, nickname: true, createdAt: true },
+  });
+
+  return user;
+}
+
+export async function login(dto: LoginDTO): Promise<LoginResult> {
+  const user = await prisma.user.findUnique({
+    where: { email: dto.email },
+    select: { id: true, password: true, nickname: true },
+  });
+
+  if (!user) {
+    throw new UnauthorizedError('Invalid email or password');
   }
 
-  async register(dto: RegisterRequestDTO): Promise<RegisterResponseDTO> {
-    const dup = await prismaClient.user.findUnique({ where: { email: dto.email } });
-    if (dup) throw new HttpError(409, 'Email already in use');
-
-    const hashed = await bcrypt.hash(dto.password, 10);
-    const user = await prismaClient.user.create({
-      data: { email: dto.email, password: hashed, nickname: dto.nickname },
-      select: { id: true, email: true, nickname: true, image: true, createdAt: true, password: true },
-    });
-
-    const accessToken = signAccessToken({
-      id: user.id,
-      email: user.email,
-      nickname: user.nickname,
-    });
-    const refreshToken = signRefreshToken({ id: user.id });
-
-    await prismaClient.user.update({
-      where: { id: user.id },
-      data: { refreshToken },
-    });
-
-    return { user: this.toAuthUserDTO(user), accessToken, refreshToken };
+  const ok = await bcrypt.compare(dto.password, user.password);
+  if (!ok) {
+    throw new UnauthorizedError('Invalid email or password');
   }
 
-  async login(dto: LoginRequestDTO): Promise<LoginResponseDTO> {
-    const user = await prismaClient.user.findUnique({
-      where: { email: dto.email },
-      select: { id: true, email: true, nickname: true, image: true, createdAt: true, password: true },
-    });
-    if (!user) throw new UnauthorizedError('Invalid credentials');
+  const token = signToken({ id: user.id, nickname: user.nickname });
+  return { token };
+}
 
-    const ok = await bcrypt.compare(dto.password, user.password);
-    if (!ok) throw new UnauthorizedError('Invalid credentials');
-
-    const accessToken = signAccessToken({
-      id: user.id,
-      email: user.email,
-      nickname: user.nickname,
-    });
-    const refreshToken = signRefreshToken({ id: user.id });
-
-    await prismaClient.user.update({
-      where: { id: user.id },
-      data: { refreshToken },
-    });
-
-    return { user: this.toAuthUserDTO(user), accessToken, refreshToken };
-  }
-
-  async refresh(dto: RefreshRequestDTO): Promise<RefreshResponseDTO> {
-    let payload: { id: number };
-    try {
-      payload = verifyRefreshToken(dto.refreshToken);
-    } catch {
-      throw new UnauthorizedError('Invalid refresh token');
-    }
-
-    const user = await prismaClient.user.findUnique({
-      where: { id: payload.id },
-      select: {
-        id: true,
-        email: true,
-        nickname: true,
-        image: true,
-        createdAt: true,
-        refreshToken: true,
-      },
-    });
-    if (!user) throw new NotFoundError('User not found');
-
-    if (user.refreshToken !== dto.refreshToken) {
-      throw new UnauthorizedError('Refresh token mismatch');
-    }
-
-    const accessToken = signAccessToken({
-      id: user.id,
-      email: user.email,
-      nickname: user.nickname,
-    });
-    const newRefreshToken = signRefreshToken({ id: user.id });
-
-    await prismaClient.user.update({
-      where: { id: user.id },
-      data: { refreshToken: newRefreshToken },
-    });
-
-    return { user: this.toAuthUserDTO(user), accessToken, refreshToken: newRefreshToken };
-  }
-
-  async logout(userId: number): Promise<void> {
-    const exists = await prismaClient.user.findUnique({
-      where: { id: userId },
-      select: { id: true },
-    });
-    if (!exists) throw new NotFoundError('User not found');
-
-    await prismaClient.user.update({
-      where: { id: userId },
-      data: { refreshToken: null },
-    });
-  }
+export function verifyToken(token: string) {
+  return jwt.verify(token, JWT_SECRET) as { id: number; nickname?: string; iat: number; exp: number };
 }

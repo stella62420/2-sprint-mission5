@@ -1,24 +1,27 @@
 export interface AuthUserDTO {
   id: number;
-  email: string;
-  nickname: string;
-  image?: string | null;
-  createdAt: Date;
+  email?: string;
+  nickname?: string;
 }
 
-export interface AuthTokensDTO {
-  accessToken: string;
-  refreshToken: string;
+export interface LoginServiceResult {
+  user?: AuthUserDTO | null;
+  accessToken?: string;
+  refreshToken?: string;
+  [key: string]: unknown;
 }
 
-export interface RegisterResponseDTO extends AuthTokensDTO {
+export interface RegisterResponseDTO {
   user: AuthUserDTO;
+  token: string;
 }
 
-export interface LoginResponseDTO extends AuthTokensDTO {
+export interface LoginResponseDTO {
   user: AuthUserDTO;
+  token: string;
+  refreshToken?: string;
 }
 
-export interface RefreshResponseDTO extends AuthTokensDTO {
-  user: AuthUserDTO;
+export interface RefreshResponseDTO {
+  token: string;
 }

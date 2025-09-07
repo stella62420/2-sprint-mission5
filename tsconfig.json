@@ -5,9 +5,11 @@
     "rootDir": "src",
     "outDir": "dist",
     "strict": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "node",
     "esModuleInterop": true,
+    "types": ["node", "jest"],
     "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
     "typeRoots": ["./src/types", "./node_modules/@types"],
     "skipLibCheck": true,
     "resolveJsonModule": true,
@@ -18,7 +20,7 @@
       "@middlewares/*": ["src/middleware/*"],
       "@articles/*": ["src/articles/*"],
       "@auth/*": ["src/auth/*"],
-      "@users/*": ["src/users/*"]
+      "@users/*": ["src/users/*"],
     }
   },
   "include": ["src/**/*"],

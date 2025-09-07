@@ -1,18 +1,17 @@
-import express from 'express';
-import multer from 'multer';
-import { authenticateUser, optionalAuthenticateUser } from '../middleware/auth';
-import { withAsync } from '../lib/withAsync';
-import * as PC from './productController';
+import { Router } from 'express';
+import { authenticateUser } from '../middleware/auth';
+import * as controller from './productsController';
 
-const router = express.Router();
+const router = Router();
 
-const upload = multer({ dest: 'uploads/' });
+router.get('/', controller.getProductList);
+router.get('/:id', controller.getProductDetail);
 
-router.post('/', authenticateUser, withAsync(PC.createProduct));
-router.get('/:id', optionalAuthenticateUser, withAsync(PC.getProduct));
-router.patch('/:id', authenticateUser, withAsync(PC.updateProduct));
-router.delete('/:id', authenticateUser, withAsync(PC.deleteProduct));
-router.get('/', optionalAuthenticateUser, withAsync(PC.getProductList));
-router.post('/:id/likes', authenticateUser, withAsync(PC.addProductLike));
-router.delete('/:id/likes', authenticateUser, withAsync(PC.removeProductLike));
+router.post('/', authenticateUser, controller.createProduct);
+router.patch('/:id', authenticateUser, controller.updateProduct);
+router.delete('/:id', authenticateUser, controller.removeProduct);
+
+router.post('/:id/likes', authenticateUser, controller.addProductLike);
+router.delete('/:id/likes', authenticateUser, controller.removeProductLike);
+
 export default router;

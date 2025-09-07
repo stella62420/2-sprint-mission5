@@ -1,4 +1,4 @@
-import { prismaClient } from '../lib/prismaClient';
+import prismaClient from '../lib/prismaClient';
 import type { CreateNotificationRequestDTO } from './dtos/notification.request.dto';
 
 export class NotificationRepository {

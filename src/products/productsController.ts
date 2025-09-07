@@ -1,96 +1,72 @@
-import type { Request, Response } from 'express';
-import { withAsync } from '../lib/withAsync';
+import type { Request, Response, NextFunction } from 'express';
 import ProductService from './productService';
 import { PrismaProductRepository } from './productRepository';
-import {
-  CreateProductRequestDTO,
-  UpdateProductRequestDTO,
-  ListProductsQueryDTO,
-} from './dtos/product.request.dto';
 
-const repo = new PrismaProductRepository();
-const service = new ProductService(repo);
+const service = new ProductService(new PrismaProductRepository());
 
-/**
- * POST /products
- * 상품 생성
- */
-export const createProduct = withAsync(async (req: Request, res: Response) => {
-  const dto = req.body as CreateProductRequestDTO;
-  const userId = (req as any).user.id;
-  const product = await service.create(userId, dto);
-  res.status(201).json(product);
-});
+export async function getProductList(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).user?.id as number | undefined;
+    const query: any = {
+      page: req.query.page ? Number(req.query.page) : 1,
+      pageSize: req.query.pageSize ? Number(req.query.pageSize) : 20,
+      keyword: req.query.keyword ? String(req.query.keyword) : undefined,
+    };
+    const data = await service.list(query, userId);
+    res.status(200).json(data);
+  } catch (e) { next(e); }
+}
 
-/**
- * GET /products/:id
- * 특정 상품 상세 조회
- */
-export const getProduct = withAsync(async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id, 10);
-  const userId = (req as any).user?.id;
-  const product = await service.getById(id, userId);
-  res.json(product);
-});
+export async function getProductDetail(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = Number(req.params.id);
+    const data = await service.getById(id);
+    res.status(200).json(data);
+  } catch (e) { next(e); }
+}
 
-/**
- * PATCH /products/:id
- * 상품 수정
- */
-export const updateProduct = withAsync(async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id, 10);
-  const userId = (req as any).user.id;
-  const patch = req.body as UpdateProductRequestDTO;
-  const product = await service.update(id, userId, patch);
-  res.json(product);
-});
+export async function createProduct(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).user!.id as number;
+    const dto = req.body as any;
+    const created = await service.create(dto, userId);
+    res.status(201).json(created);
+  } catch (e) { next(e); }
+}
 
-/**
- * DELETE /products/:id
- * 상품 삭제
- */
-export const deleteProduct = withAsync(async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id, 10);
-  const userId = (req as any).user.id;
-  await service.remove(id, userId);
-  res.status(204).end();
-});
+export async function updateProduct(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = Number(req.params.id);
+    const userId = (req as any).user!.id as number;
+    const dto = req.body as any;
+    const updated = await service.update(id, userId, dto);
+    res.status(200).json(updated);
+  } catch (e) { next(e); }
+}
 
-/**
- * GET /products
- * 상품 목록 조회
- */
-export const getProductList = withAsync(async (req: Request, res: Response) => {
-  const query = req.query as unknown as ListProductsQueryDTO;
-  // querystring은 string 타입이라 parse 필요
-  const q: ListProductsQueryDTO = {
-    page: Number(query.page ?? 1),
-    pageSize: Number(query.pageSize ?? 10),
-    keyword: query.keyword,
-    orderBy: query.orderBy,
-  };
-  const list = await service.list(q);
-  res.json(list);
-});
+export async function removeProduct(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = Number(req.params.id);
+    const userId = (req as any).user!.id as number;
+    await service.remove(id, userId);
+    res.status(204).end();
+  } catch (e) { next(e); }
+}
 
-/**
- * POST /products/:id/like
- * 좋아요 추가
- */
-export const addProductLike = withAsync(async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id, 10);
-  const userId = (req as any).user.id;
-  const result = await service.like(id, userId);
-  res.json(result);
-});
+export async function addProductLike(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = Number(req.params.id);
+    const userId = (req as any).user!.id as number;
+    const result = await service.addLike(id, userId);
+    res.status(200).json(result);
+  } catch (e) { next(e); }
+}
 
-/**
- * DELETE /products/:id/like
- * 좋아요 취소
- */
-export const removeProductLike = withAsync(async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id, 10);
-  const userId = (req as any).user.id;
-  const result = await service.unlike(id, userId);
-  res.json(result);
-});
+export async function removeProductLike(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = Number(req.params.id);
+    const userId = (req as any).user!.id as number;
+    const result = await service.removeLike(id, userId);
+    res.status(200).json(result);
+  } catch (e) { next(e); }
+}

@@ -1,105 +1,175 @@
-import type { Product } from '@prisma/client';
-import { prismaClient } from '../lib/prismaClient';
+import prisma from '../lib/prismaClient';
 import type {
   CreateProductRequestDTO,
   UpdateProductRequestDTO,
   ListProductsQueryDTO,
 } from './dtos/product.request.dto';
-
-export interface IProductRepository {
-  create(data: CreateProductRequestDTO & { userId: number }): Promise<Product>;
-  findById(id: number): Promise<(Product & { seller: { id: number; nickname: string } }) | null>;
-  update(id: number, patch: UpdateProductRequestDTO): Promise<Product>;
-  delete(id: number): Promise<void>;
-  list(q: ListProductsQueryDTO): Promise<{ items: Product[]; total: number }>;
-  countLikes(productId: number): Promise<number>;
-  isLikedBy(productId: number, userId: number): Promise<boolean>;
-  like(productId: number, userId: number): Promise<void>;
-  unlike(productId: number, userId: number): Promise<void>;
-
-  findLikedUsers(productId: number): Promise<{ id: number; email: string; nickname: string }[]>;
-}
-
-function toOrder(orderBy?: ListProductsQueryDTO['orderBy']) {
-  switch (orderBy) {
-    case 'oldest':
-      return { createdAt: 'asc' } as const;
-    case 'priceAsc':
-      return { price: 'asc' } as const;
-    case 'priceDesc':
-      return { price: 'desc' } as const;
-    default:
-      return { createdAt: 'desc' } as const;
-  }
-}
+import type {
+  ProductSummaryDTO,
+  ProductDetailDTO,
+  Paginated,
+} from './dtos/product.response.dto';
+import type { IProductRepository } from './productRepository.interface';
 
 export class PrismaProductRepository implements IProductRepository {
-  create(data: CreateProductRequestDTO & { userId: number }) {
-    return prismaClient.product.create({ data });
+  async create(
+    data: CreateProductRequestDTO & { userId: number }
+  ): Promise<ProductDetailDTO> {
+    const row = await prisma.product.create({
+      data: {
+        userId: data.userId,
+        title: data.title,
+        description: data.description ?? null,
+        price: data.price,
+        category: data.category ?? null,
+        images: data.images ?? [],
+      },
+    });
+
+    return {
+      id: row.id,
+      title: row.title,
+      description: row.description ?? null,
+      price: row.price,
+      images: row.images,
+      category: row.category ?? null,
+      createdAt: row.createdAt,
+    } as unknown as ProductDetailDTO;
   }
 
-  findById(id: number) {
-    return prismaClient.product.findUnique({
+  async findById(id: number): Promise<ProductDetailDTO | null> {
+    const row = await prisma.product.findUnique({
       where: { id },
-      include: { seller: { select: { id: true, nickname: true } } },
-    }) as any;
+      include: { _count: { select: { Likes: true } } },
+    });
+    if (!row) return null;
+
+    return {
+      id: row.id,
+      title: row.title,
+      description: row.description ?? null,
+      price: row.price,
+      images: row.images,
+      category: row.category ?? null,
+      createdAt: row.createdAt,
+      likes: row._count.Likes,
+    } as unknown as ProductDetailDTO;
   }
 
-  update(id: number, patch: UpdateProductRequestDTO) {
-    return prismaClient.product.update({ where: { id }, data: patch });
-  }
+  async findMany(
+    q: ListProductsQueryDTO,
+    _userId?: number
+  ): Promise<Paginated<ProductSummaryDTO>> {
+    const page = q.page ?? 1;
+    const pageSize = q.pageSize ?? 10;
+    const skip = (page - 1) * pageSize;
 
-  async delete(id: number) {
-    await prismaClient.product.delete({ where: { id } });
-  }
+    const where: any = {};
+    if (q.q) where.title = { contains: q.q };
 
-  async list({ page, pageSize, keyword, orderBy }: ListProductsQueryDTO) {
-    const where: any = keyword
-      ? { OR: [{ title: { contains: keyword } }, { description: { contains: keyword } }] }
-      : {};
+    const orderBy =
+      q.orderBy === 'priceAsc'
+        ? { price: 'asc' as const }
+        : q.orderBy === 'priceDesc'
+        ? { price: 'desc' as const }
+        : { createdAt: 'desc' as const };
 
-    const [items, total] = await Promise.all([
-      prismaClient.product.findMany({
+    const [rows, total] = await Promise.all([
+      prisma.product.findMany({
         where,
-        orderBy: toOrder(orderBy),
-        skip: (page - 1) * pageSize,
+        orderBy,
+        skip,
         take: pageSize,
+        include: { _count: { select: { Likes: true } } },
       }),
-      prismaClient.product.count({ where }),
+      prisma.product.count({ where }),
     ]);
-    return { items, total };
+
+    const items: ProductSummaryDTO[] = rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      price: r.price,
+      images: r.images,
+      category: r.category ?? null,
+      createdAt: r.createdAt,
+      likes: r._count.Likes,
+    })) as unknown as ProductSummaryDTO[];
+
+    return { items, total } as Paginated<ProductSummaryDTO>;
   }
 
-  countLikes(productId: number) {
-    return prismaClient.productLike.count({ where: { productId } });
-  }
+  async update(args: {
+    id: number;
+    userId: number;
+    dto: UpdateProductRequestDTO;
+  }): Promise<ProductDetailDTO> {
+    const { id, userId, dto } = args;
 
-  async isLikedBy(productId: number, userId: number) {
-    const row = await prismaClient.productLike.findUnique({
-      where: { productId_userId: { productId, userId } },
+    const { count } = await prisma.product.updateMany({
+      where: { id, userId },
+      data: {
+        ...(dto.title !== undefined ? { title: dto.title } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description ?? null }
+          : {}),
+        ...(dto.price !== undefined ? { price: dto.price } : {}),
+        ...(dto.category !== undefined ? { category: dto.category ?? null } : {}),
+        ...(dto.images !== undefined ? { images: dto.images ?? [] } : {}),
+      },
     });
-    return !!row;
+
+    if (count === 0) {
+      const err: any = new Error('forbidden');
+      err.status = 403;
+      throw err;
+    }
+
+    const row = await prisma.product.findUnique({
+      where: { id },
+      include: { _count: { select: { Likes: true } } },
+    });
+
+    return {
+      id: row!.id,
+      title: row!.title,
+      description: row!.description ?? null,
+      price: row!.price,
+      images: row!.images,
+      category: row!.category ?? null,
+      createdAt: row!.createdAt,
+      likes: row!._count.Likes,
+    } as unknown as ProductDetailDTO;
   }
 
-  async like(productId: number, userId: number) {
-    await prismaClient.productLike.upsert({
-      where: { productId_userId: { productId, userId } },
+  async remove(args: { id: number; userId: number }): Promise<void> {
+    const { id, userId } = args;
+
+    const { count } = await prisma.product.deleteMany({
+      where: { id, userId },
+    });
+
+    if (count === 0) {
+      const err: any = new Error('forbidden');
+      err.status = 403;
+      throw err;
+    }
+  }
+
+  async addLike({ id, userId }: { id: number; userId: number }): Promise<void> {
+    await prisma.productLike.upsert({
+      where: { productId_userId: { productId: id, userId } },
+      create: { productId: id, userId },
       update: {},
-      create: { productId, userId },
     });
   }
 
-  async unlike(productId: number, userId: number) {
-    await prismaClient.productLike
-      .delete({ where: { productId_userId: { productId, userId } } })
-      .catch(() => {});
+  async removeLike({ id, userId }: { id: number; userId: number }): Promise<void> {
+    await prisma.productLike.deleteMany({
+      where: { productId: id, userId },
+    });
   }
 
-  async findLikedUsers(productId: number) {
-    const likes = await prismaClient.productLike.findMany({
-      where: { productId },
-      include: { user: { select: { id: true, email: true, nickname: true } } },
-    });
-    return likes.map((l) => l.user);
+  async countLikes(id: number): Promise<number> {
+    return prisma.productLike.count({ where: { productId: id } });
   }
 }

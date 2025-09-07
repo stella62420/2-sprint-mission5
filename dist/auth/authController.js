@@ -13,7 +13,6 @@ const BadRequestError_1 = __importDefault(require("../lib/errors/BadRequestError
 const authStructs_1 = require("./authStructs");
 const superstruct_1 = require("superstruct");
 const env_1 = require("../lib/env");
-// 가입 프로세스
 async function register(req, res) {
     const { email, nickname, password } = (0, superstruct_1.create)(req.body, authStructs_1.RegisterBodyStruct);
     const hashedPassword = await bcryptjs_1.default.hash(password, 10);
@@ -30,7 +29,6 @@ async function register(req, res) {
         nickname: newUser.nickname,
     });
 }
-// 로그인
 async function login(req, res) {
     const { email, password } = (0, superstruct_1.create)(req.body, authStructs_1.LoginBodyStruct);
     const user = await prismaClient_1.prismaClient.user.findUnique({ where: { email } });

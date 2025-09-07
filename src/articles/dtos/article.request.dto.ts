@@ -13,7 +13,8 @@ export interface UpdateArticleRequestDTO {
 }
 
 export interface ListArticlesQueryDTO {
-  page: number;
+  q?: string;
+  page?: number;
   pageSize: number;
   keyword?: string;
   orderBy?: ArticleOrderBy;

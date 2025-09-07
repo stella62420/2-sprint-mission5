@@ -3,20 +3,18 @@ export interface ProductSummaryDTO {
   title: string;
   price: number;
   images: string[];
-  category?: string | null;
+  category: string | null;
+  description: string | null;
   createdAt: Date;
+  updatedAt: Date;
   likes: number;
 }
 
 export interface ProductDetailDTO extends ProductSummaryDTO {
-  description: string;
-  liked: boolean;
   seller: { id: number; nickname: string };
 }
 
-export interface Paginated<T> {
+export type Paginated<T> = {
   items: T[];
-  page: number;
-  pageSize: number;
   total: number;
-}
+};

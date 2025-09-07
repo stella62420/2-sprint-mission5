@@ -1,4 +1,4 @@
-import { prismaClient } from '../lib/prismaClient';
+import prisma from '../lib/prismaClient';
 import type {
   ListCommentsQueryDTO,
   CreateCommentRequestDTO,
@@ -21,7 +21,7 @@ export interface ICommentRepository {
 
 export class PrismaCommentRepository implements ICommentRepository {
   async findById(id: number) {
-    return prismaClient.comment.findUnique({ where: { id } });
+    return prisma.comment.findUnique({ where: { id } });
   }
 
   async list({ page, pageSize, targetType, targetId, userId }: ListCommentsQueryDTO) {
@@ -36,13 +36,13 @@ export class PrismaCommentRepository implements ICommentRepository {
     }
 
     const [items, total] = await Promise.all([
-      prismaClient.comment.findMany({
+      prisma.comment.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
-      prismaClient.comment.count({ where }),
+      prisma.comment.count({ where }),
     ]);
     return { items, total };
   }
@@ -53,35 +53,35 @@ export class PrismaCommentRepository implements ICommentRepository {
         ? { content: data.content, userId: data.userId, productId: data.targetId }
         : { content: data.content, userId: data.userId, articleId: data.targetId };
 
-    return prismaClient.comment.create({ data: payload as any });
+    return prisma.comment.create({ data: payload as any });
   }
 
   async update(id: number, patch: UpdateCommentRequestDTO) {
-    return prismaClient.comment.update({ where: { id }, data: patch });
+    return prisma.comment.update({ where: { id }, data: patch });
   }
 
   async delete(id: number) {
-    await prismaClient.comment.delete({ where: { id } });
+    await prisma.comment.delete({ where: { id } });
   }
 
   async targetExists(type: 'product' | 'article', id: number) {
     if (type === 'product') {
-      const x = await prismaClient.product.findUnique({ where: { id }, select: { id: true } });
+      const x = await prisma.product.findUnique({ where: { id }, select: { id: true } });
       return !!x;
     }
-    const y = await prismaClient.article.findUnique({ where: { id }, select: { id: true } });
+    const y = await prisma.article.findUnique({ where: { id }, select: { id: true } });
     return !!y;
   }
 
   async findArticleAuthor(articleId: number) {
-    return prismaClient.article.findUnique({
+    return prisma.article.findUnique({
       where: { id: articleId },
       select: { id: true, title: true, authorId: true },
     });
   }
 
   async findProductSeller(productId: number) {
-    return prismaClient.product.findUnique({
+    return prisma.product.findUnique({
       where: { id: productId },
       select: { id: true, title: true, userId: true },
     });

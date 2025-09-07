@@ -1,78 +1,56 @@
-import type { IArticleRepository } from './articleRepository';
 import type {
-  CreateArticleRequestDTO, UpdateArticleRequestDTO, ListArticlesQueryDTO
+  CreateArticleRequestDTO,
+  UpdateArticleRequestDTO,
+  ListArticlesQueryDTO,
 } from './dtos/article.request.dto';
 import type {
-  ArticleDetailDTO, ArticleSummaryDTO, Paginated
+  ArticleSummaryDTO,
+  ArticleDetailDTO,
+  Paginated,
 } from './dtos/article.response.dto';
 import NotFoundError from '../lib/errors/NotFoundError';
-import ForbiddenError from '../lib/errors/ForbiddenError';
 
 export default class ArticleService {
-  constructor(private repo: IArticleRepository) {}
+  constructor(private readonly repo: any) {}
 
-  async create(userId: number, dto: CreateArticleRequestDTO): Promise<ArticleSummaryDTO> {
-    const a = await this.repo.create({ ...dto, userId });
-    const likes = await this.repo.countLikes(a.id);
-    return { id: a.id, title: a.title, image: a.image ?? null, createdAt: a.createdAt, likes };
+  async list(
+    query: ListArticlesQueryDTO,
+    userId?: number,
+  ): Promise<Paginated<ArticleSummaryDTO>> {
+    return await this.repo.findMany(query, userId);
   }
 
-  async getById(id: number, authUserId?: number): Promise<ArticleDetailDTO> {
-    const a = await this.repo.findById(id);
-    if (!a) throw new NotFoundError('Article not found');
-
-    const [likes, liked] = await Promise.all([
-      this.repo.countLikes(id),
-      authUserId ? this.repo.isLikedBy(id, authUserId) : Promise.resolve(false),
-    ]);
-
-    return {
-      id: a.id,
-      title: a.title,
-      image: a.image ?? null,
-      createdAt: a.createdAt,
-      likes,
-      liked,
-      content: a.content,
-      user: { id: a.author.id, nickname: a.author.nickname },
-    };
+  async detail(id: number, userId?: number): Promise<ArticleDetailDTO> {
+    const row: ArticleDetailDTO | null = await this.repo.findById(id, userId);
+    if (!row) throw new NotFoundError('Article not found');
+    return row;
   }
 
-  async update(id: number, userId: number, patch: UpdateArticleRequestDTO): Promise<ArticleSummaryDTO> {
-    const prev = await this.repo.findById(id);
-    if (!prev) throw new NotFoundError('Article not found');
-    if ((prev as any).authorId !== userId) throw new ForbiddenError('Forbidden');
+  async create(userId: number, dto: CreateArticleRequestDTO): Promise<ArticleDetailDTO> {
+    return await this.repo.create(userId, dto);
+  }
 
-    const a = await this.repo.update(id, patch);
-    const likes = await this.repo.countLikes(id);
-    return { id: a.id, title: a.title, image: a.image ?? null, createdAt: a.createdAt, likes };
+  async update(
+    id: number,
+    userId: number,
+    dto: UpdateArticleRequestDTO,
+  ): Promise<ArticleDetailDTO> {
+    return await this.repo.update(id, userId, dto);
   }
 
   async remove(id: number, userId: number): Promise<void> {
-    const prev = await this.repo.findById(id);
-    if (!prev) throw new NotFoundError('Article not found');
-    if ((prev as any).authorId !== userId) throw new ForbiddenError('Forbidden');
-    await this.repo.delete(id);
+    await this.repo.delete(id, userId);
   }
 
-  async list(q: ListArticlesQueryDTO): Promise<Paginated<ArticleSummaryDTO>> {
-    const { items, total } = await this.repo.list(q);
-    const likesArr = await Promise.all(items.map(i => this.repo.countLikes(i.id)));
-    const summaries = items.map((a, i) => ({
-      id: a.id, title: a.title, image: a.image ?? null, createdAt: a.createdAt, likes: likesArr[i],
-    }));
-    return { items: summaries, page: q.page, pageSize: q.pageSize, total };
+  async like(id: number, userId: number): Promise<{ id: number; likes: number }> {
+    if (this.repo?.like) await this.repo.like(id, userId);
+    const likes: number = this.repo?.countLikes ? await this.repo.countLikes(id) : 0;
+    return { id, likes };
   }
 
-  async like(id: number, userId: number) {
-    await this.repo.like(id, userId);
-    const likes = await this.repo.countLikes(id);
-    return { liked: true, likes };
-  }
-
-  async unlike(id: number, userId: number) {
-    await this.repo.unlike(id, userId);
-    const likes = await this.repo.countLikes(id);
-    return { liked: false, likes };
+  async unlike(id: number, userId: number): Promise<{ id: number; likes: number }> {
+    if (this.repo?.unlike) await this.repo.unlike(id, userId);
+    const likes: number = this.repo?.countLikes ? await this.repo.countLikes(id) : 0;
+    return { id, likes };
   }
 }

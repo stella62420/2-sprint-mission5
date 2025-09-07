@@ -1,44 +1,37 @@
-import type { RequestHandler } from 'express';
-import { prismaClient } from '../lib/prismaClient';
-import { verifyAccessToken } from '../lib/jwt';
+import type { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 
-export const authenticateUser: RequestHandler = async (req, res, next) => {
+const SECRET = process.env.JWT_SECRET || 'test-secret';
+
+function extractBearerToken(req: Request): string | null {
+  const raw =
+    (req.headers.authorization as string | undefined) ||
+    ((req.headers as any).Authorization as string | undefined);
+  if (!raw) return null;
+  const m = raw.match(/^bearer\s+(.+)$/i);
+  return m ? m[1].trim() : null;
+}
+
+export function authenticateUser(req: Request, res: Response, next: NextFunction) {
+  const token = extractBearerToken(req);
+  if (!token) return res.status(401).json({ message: 'Unauthorized' });
   try {
-    const header = req.headers.authorization;
-    if (!header?.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Authentication token missing or malformed.' });
-    }
-    const token = header.split(' ')[1];
-    const { id } = verifyAccessToken(token);
-
-    const user = await prismaClient.user.findUnique({
-      where: { id },
-      select: { id: true, email: true, nickname: true, image: true, createdAt: true },
-    });
-    if (!user) return res.status(401).json({ message: 'Invalid token' });
-
-    (req as any).user = user;
-    next();
-  } catch (e) {
-    return res.status(401).json({ message: 'Invalid token' });
-  }
-};
-
-export const optionalAuthenticateUser: RequestHandler = async (req, _res, next) => {
-  try {
-    const header = req.headers.authorization;
-    if (!header?.startsWith('Bearer ')) {
-      (req as any).user = null; return next();
-    }
-    const token = header.split(' ')[1];
-    const { id } = verifyAccessToken(token);
-    const user = await prismaClient.user.findUnique({
-      where: { id },
-      select: { id: true, email: true, nickname: true, image: true, createdAt: true },
-    });
-    (req as any).user = user || null;
+    const payload = jwt.verify(token, SECRET) as any;
+    (req as any).user = { id: payload.id };
     next();
   } catch {
-    (req as any).user = null; next();
+    return res.status(401).json({ message: 'Unauthorized' });
   }
-};
+}
+
+export function optionalAuthenticateUser(req: Request, _res: Response, next: NextFunction) {
+  const token = extractBearerToken(req);
+  if (!token) return next();
+  try {
+    const payload = jwt.verify(token, SECRET) as any;
+    (req as any).user = { id: payload.id };
+  } catch {}
+  next();
+}
+
+export const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
