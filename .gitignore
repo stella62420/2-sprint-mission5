@@ -1,0 +1,16 @@
+# Local files
+.vscode/
+node_modules/
+.env*
+!env.example
+coverage/
+*.csv
+dist/
+
+# Uploaded files
+public/*
+!public/.gitkeep
+
+# Generated & upload dirs
+generated/prisma/
+uploads/
